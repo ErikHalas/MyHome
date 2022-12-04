@@ -20,24 +20,20 @@ import com.myhome.controllers.dto.mapper.HouseMemberMapper;
 import com.myhome.controllers.mapper.HouseApiMapper;
 import com.myhome.domain.CommunityHouse;
 import com.myhome.domain.HouseMember;
-import com.myhome.model.AddHouseMemberRequest;
-import com.myhome.model.AddHouseMemberResponse;
-import com.myhome.model.GetHouseDetailsResponse;
-import com.myhome.model.GetHouseDetailsResponseCommunityHouse;
-import com.myhome.model.HouseMemberDto;
-import com.myhome.model.ListHouseMembersResponse;
+import com.myhome.domain.HouseRental;
+import com.myhome.model.*;
 import com.myhome.services.HouseService;
 import helpers.TestUtils;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+
+import java.time.OffsetDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -89,6 +85,35 @@ class HouseControllerTest {
 
     // when
     ResponseEntity<GetHouseDetailsResponse> response = houseController.listAllHouses(null);
+
+    // then
+    assertEquals(HttpStatus.OK, response.getStatusCode());
+    assertEquals(expectedResponseBody, response.getBody());
+  }
+
+  @Test
+  void listRentalsForHouse() {
+    // given
+    CommunityHouse testCommunityHouse = TestUtils.CommunityHouseHelpers.getTestCommunityHouse(TEST_HOUSE_ID);
+
+    List<HouseRental> houseRentals = new ArrayList<>();
+    HouseRental testHouseRental = new HouseRental(TEST_HOUSE_ID,TEST_MEMBER_ID,OffsetDateTime.now(),OffsetDateTime.now()
+            ,null,null,null, null);
+    houseRentals.add(testHouseRental);
+
+    ListRentalsResponse expectedResponseBody = new ListRentalsResponse();
+    RentalDto rentalDto = new RentalDto()
+            .houseId(TEST_HOUSE_ID)
+            .memberId(TEST_MEMBER_ID)
+            .bookingToDate(OffsetDateTime.now())
+            .bookingFromDate(OffsetDateTime.now());
+    expectedResponseBody.addRentalsItem(rentalDto);
+
+    given(houseService.listHouseRentalsForHouseId(TEST_HOUSE_ID, Pageable.unpaged())).willReturn(Optional.of(houseRentals));
+
+    // when
+    ResponseEntity<ListRentalsResponse> response =
+            houseController.listRentalsForHouseId(TEST_HOUSE_ID,Pageable.unpaged());
 
     // then
     assertEquals(HttpStatus.OK, response.getStatusCode());
